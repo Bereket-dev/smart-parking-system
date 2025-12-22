@@ -5,37 +5,50 @@
 
 class Queue {
 private:
-    Vehicle arr[100];
-    int front, rear;
+    struct Node {
+        Vehicle data;
+        Node* next;
+    };
+
+    Node* front;
 
 public:
     Queue() {
-        front = rear = -1;
+        front = nullptr;
     }
 
     bool isEmpty() {
-        return front == -1;
-    }
-
-    bool isFull() {
-        return rear == 99;
+        return front == nullptr;
     }
 
     void enqueue(Vehicle v) {
-        if (isFull()) return;
-        if (front == -1) front = 0;
-        arr[++rear] = v;
+        Node* newNode = new Node{v, nullptr};
+
+        if (isEmpty() || v.priority < front->data.priority) {
+            newNode->next = front;
+            front = newNode;
+            return;
+        }
+
+        Node* current = front;
+        while (current->next != nullptr &&
+               current->next->data.priority <= v.priority) {
+            current = current->next;
+        }
+
+        newNode->next = current->next;
+        current->next = newNode;
     }
 
     Vehicle dequeue() {
         Vehicle v;
         if (isEmpty()) return v;
 
-        v = arr[front];
-        if (front == rear)
-            front = rear = -1;
-        else
-            front++;
+        Node* temp = front;
+        v = front->data;
+        front = front->next;
+        delete temp;
+
         return v;
     }
 };
