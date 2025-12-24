@@ -3,18 +3,19 @@
 
 #include "Vehicle.h"
 
+struct QNode {
+    Vehicle data;
+    QNode* next;
+};
+
 class Queue {
 private:
-    struct Node {
-        Vehicle data;
-        Node* next;
-    };
-
-    Node* front;
+    QNode* front;
+    QNode* rear;
 
 public:
     Queue() {
-        front = nullptr;
+        front = rear = nullptr;
     }
 
     bool isEmpty() {
@@ -22,33 +23,29 @@ public:
     }
 
     void enqueue(Vehicle v) {
-        Node* newNode = new Node{v, nullptr};
+        QNode* temp = new QNode{v, nullptr};
 
-        if (isEmpty() || v.priority < front->data.priority) {
-            newNode->next = front;
-            front = newNode;
+        if (rear == nullptr) {
+            front = rear = temp;
             return;
         }
-
-        Node* current = front;
-        while (current->next != nullptr &&
-               current->next->data.priority <= v.priority) {
-            current = current->next;
-        }
-
-        newNode->next = current->next;
-        current->next = newNode;
+        rear->next = temp;
+        rear = temp;
     }
 
     Vehicle dequeue() {
-        Vehicle v;
-        if (isEmpty()) return v;
+        if (isEmpty()) {
+            return Vehicle("", -1);
+        }
 
-        Node* temp = front;
-        v = front->data;
+        QNode* temp = front;
+        Vehicle v = temp->data;
         front = front->next;
-        delete temp;
 
+        if (front == nullptr)
+            rear = nullptr;
+
+        delete temp;
         return v;
     }
 };
