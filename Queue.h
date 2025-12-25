@@ -51,15 +51,6 @@ public:
 
         return v;
     }
-    int getSize() const {
-        int count = 0;
-        Node* current = front;
-        while (current != nullptr) {
-            count++;
-            current = current->next;
-        }
-        return count;
-    }
 };
 
 #endif
