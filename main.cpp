@@ -7,7 +7,7 @@ using namespace std;
 int main()
 {
     int rows, cols, dRow, dCol;
-    cout << "=== Smart Parking System Configuration ===\n";
+    cout << "=== Smart Parking System ===\n";
     cout << "Enter number of rows: ";
     cin >> rows;
     cout << "Enter distance between rows: ";
