@@ -1,0 +1,7 @@
+"Test Case ID
+"	Feature	Input	Expected Result	Actual Result	Status
+TC001	Add Vehicle	"Plate: A12345, Priority: 1"	Vehicle added to system	Vehicle added	Pass
+TC002	Add Vehicle	"Plate: B6789, Priority: 2"	Vehicle added to system	Vehicle added	Pass
+TC003	Assign Slot	"Vehicle B6789, Gate 2"	Vehicle parked at nearest slot	Vehicle B6789 parked at slot 8 (distance 0 from gate 2)	Pass
+TC004	Remove Vehicle	Plate: A12345	Vehicle removed from system	Vehicle removed	Pass
+TC005	Display Slots	N/A	Show all slots with status	Slot 1-12 displayed as free/occupied (see program output)	Pass
