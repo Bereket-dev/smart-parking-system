@@ -1,26 +1,26 @@
 #include "ParkingSystem.h"
 #include <iostream>
-#include <queue>
 #include <climits>
 #include <cmath>
 
 using namespace std;
 
-// Initialize parking system
 ParkingSystem::ParkingSystem(int totalSlots)
 {
     head = tail = nullptr;
-    graph.resize(totalSlots + 1); // adjacency list
+    graph.resize(totalSlots + 1);
     distanceFromGates.resize(totalSlots + 1);
+
+    recentTop = nullptr;
+    historyHead = nullptr;
+    historyTail = nullptr;
 }
 
-// Build grid graph (rows x cols) with uniform distances
 void ParkingSystem::buildGridGraph(int rows, int cols, int dRow, int dCol)
 {
     int id = 1;
     vector<pair<int, int>> coordinates(rows * cols + 1);
 
-    // Create slots as linked list
     for (int r = 0; r < rows; r++)
     {
         for (int c = 0; c < cols; c++)
@@ -41,7 +41,6 @@ void ParkingSystem::buildGridGraph(int rows, int cols, int dRow, int dCol)
         }
     }
 
-    // Build adjacency list
     for (int i = 1; i <= rows * cols; i++)
     {
         int r = coordinates[i].first;
@@ -56,22 +55,19 @@ void ParkingSystem::buildGridGraph(int rows, int cols, int dRow, int dCol)
 
             int dr = abs(r - rr);
             int dc = abs(c - cc);
-            int dist = dr * dRow + dc * dCol; // use row/col spacing
+            int dist = dr * dRow + dc * dCol;
 
-            // Neighbor if adjacent (up, down, left, right)
             if ((abs(r - rr) + abs(c - cc)) == 1)
-                graph[i].push_back({j, dist}); 
+                graph[i].push_back({j, dist});
         }
     }
 }
 
-// Add gate
 void ParkingSystem::addGate(int slotId)
 {
     gateSlots.push_back(slotId);
 }
 
-// Compute shortest distance from each gate using BFS
 void ParkingSystem::computeDistances()
 {
     int totalSlots = graph.size() - 1;
@@ -100,7 +96,6 @@ void ParkingSystem::computeDistances()
             }
         }
 
-        // Store distances from this gate
         for (int i = 1; i <= totalSlots; i++)
         {
             distanceFromGates[i].resize(gateSlots.size());
@@ -109,7 +104,6 @@ void ParkingSystem::computeDistances()
     }
 }
 
-// Add vehicle
 void ParkingSystem::addVehicle(Vehicle v)
 {
     if (v.priority == 3)
@@ -118,7 +112,6 @@ void ParkingSystem::addVehicle(Vehicle v)
         priorityQueue.push(v);
 }
 
-// Find nearest free slot from a gate using BFS distances
 int ParkingSystem::findNearestAvailableSlot(int gateIndex)
 {
     ParkingSlot *curr = head;
@@ -139,7 +132,6 @@ int ParkingSystem::findNearestAvailableSlot(int gateIndex)
     return bestSlot;
 }
 
-// Assign vehicle from a specific gate
 void ParkingSystem::assignSlot(int gateIndex)
 {
     Vehicle v;
@@ -171,10 +163,14 @@ void ParkingSystem::assignSlot(int gateIndex)
         if (curr->slotId == slotId)
         {
             curr->isFree = false;
+            curr->parkedPlate = v.plateNumber;
             break;
         }
         curr = curr->next;
     }
+
+    string action = "PARK: " + v.plateNumber + " at slot " + to_string(slotId);
+    recordAction(action);
 
     cout << "Vehicle " << v.plateNumber
          << " parked at slot " << slotId
@@ -182,20 +178,28 @@ void ParkingSystem::assignSlot(int gateIndex)
          << " from gate " << gateIndex + 1 << ")\n";
 }
 
-// Remove vehicle
 void ParkingSystem::removeVehicle(string plate)
 {
+    bool found = false;
     for (ParkingSlot *curr = head; curr; curr = curr->next)
     {
-        if (!curr->isFree)
-        { // you may want to check vehicleMap if implemented
+        if (!curr->isFree && curr->parkedPlate == plate)
+        {
             curr->isFree = true;
+
+            string action = "EXIT: " + plate + " from slot " + to_string(curr->slotId);
+            recordAction(action);
+
+            cout << "Success: Vehicle " << plate << " has been removed from slot " << curr->slotId << ".\n";
+            found = true;
+            break;
         }
     }
-    cout << "Vehicle removed.\n";
+
+    if (!found)
+        cout << "Error: Vehicle with plate number '" << plate << "' was not found in the system.\n";
 }
 
-// Display slots and distances from all gates
 void ParkingSystem::displaySlots()
 {
     ParkingSlot *curr = head;
@@ -208,5 +212,71 @@ void ParkingSystem::displaySlots()
             cout << distanceFromGates[curr->slotId][g] << (g + 1 == gateSlots.size() ? "" : ", ");
         cout << endl;
         curr = curr->next;
+    }
+}
+
+void ParkingSystem::recordAction(string action)
+{
+    HistoryNode *newNode = new HistoryNode{action, recentTop};
+    recentTop = newNode;
+
+    HistoryNode *newHist = new HistoryNode{action, nullptr};
+    if (historyHead == nullptr)
+    {
+        historyHead = historyTail = newHist;
+    }
+    else
+    {
+        historyTail->next = newHist;
+        historyTail = newHist;
+    }
+}
+
+void ParkingSystem::pushAction(string action)
+{
+    recordAction(action);
+}
+
+string ParkingSystem::popAction()
+{
+    if (recentTop == nullptr)
+        return "No actions";
+    HistoryNode *temp = recentTop;
+    string action = temp->action;
+    recentTop = recentTop->next;
+    delete temp;
+    return action;
+}
+
+string ParkingSystem::peekAction()
+{
+    if (recentTop == nullptr)
+        return "No actions";
+    return recentTop->action;
+}
+
+void ParkingSystem::appendHistory(string action)
+{
+    recordAction(action);
+}
+
+void ParkingSystem::showRecentAction()
+{
+    cout << "Recent Action: " << peekAction() << endl;
+}
+
+void ParkingSystem::showFullHistory()
+{
+    cout << "\nFull Parking History:\n";
+    if (historyHead == nullptr)
+    {
+        cout << "No history available.\n";
+        return;
+    }
+    HistoryNode *temp = historyHead;
+    while (temp != nullptr)
+    {
+        cout << temp->action << endl;
+        temp = temp->next;
     }
 }

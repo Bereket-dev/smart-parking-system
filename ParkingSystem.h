@@ -25,14 +25,13 @@ private:
     ParkingSlot *head;
     ParkingSlot *tail;
 
-    vector<vector<pair<int, int>>> graph;  // adjacency list
-    vector<vector<int>> distanceFromGates; // distanceFromGates[slotId][gateIndex]
+    vector<vector<pair<int, int>>> graph; 
+    vector<vector<int>> distanceFromGates; 
 
     Queue normalQueue;
     priority_queue<Vehicle, vector<Vehicle>, ComparePriority> priorityQueue;
     unordered_map<string, int> vehicleMap;
 
-    // Structure for the history nodes
     struct HistoryNode
     {
         string action;
@@ -44,17 +43,17 @@ private:
     HistoryNode *historyTail;
 
 public:
-    vector<int> gateSlots; // stores slot IDs of gates
+    vector<int> gateSlots; 
 
     ParkingSystem(int totalSlots);
 
     void buildGridGraph(int rows, int cols, int dRow, int dCol);
-    void addGate(int slotId); // add gate
-    void computeDistances();  // compute distance from all gates
+    void addGate(int slotId); 
+    void computeDistances(); 
 
     void addVehicle(Vehicle v);
-    void assignSlot(int gateIndex);              // assign vehicle from a specific gate
-    int findNearestAvailableSlot(int gateIndex); // nearest slot from given gate
+    void assignSlot(int gateIndex);              
+    int findNearestAvailableSlot(int gateIndex); 
     void removeVehicle(string plate);
     void displaySlots();
 
