@@ -4,10 +4,16 @@
 #include <string>
 using namespace std;
 
-struct Vehicle {
+class Vehicle {
+public:
     string plateNumber;
-    string ownerName;
-    int priority; // 1 = Normal, 2 = VIP, 3 = Emergency
+    int priority; // 1 = VIP, 2 = Electric, 3 = Normal
+
+    Vehicle() {}
+    Vehicle(string plate, int p) {
+        plateNumber = plate;
+        priority = p;
+    }
 };
 
 #endif
