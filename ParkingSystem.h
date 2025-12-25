@@ -11,38 +11,60 @@
 
 using namespace std;
 
-struct ComparePriority {
-    bool operator()(Vehicle a, Vehicle b) {
+struct ComparePriority
+{
+    bool operator()(Vehicle a, Vehicle b)
+    {
         return a.priority > b.priority;
     }
 };
 
-class ParkingSystem {
+class ParkingSystem
+{
 private:
-    ParkingSlot* head;
-    ParkingSlot* tail;
+    ParkingSlot *head;
+    ParkingSlot *tail;
 
-    vector<vector<pair<int,int>>> graph;       // adjacency list
-    vector<vector<int>> distanceFromGates;     // distanceFromGates[slotId][gateIndex]
+    vector<vector<pair<int, int>>> graph;  // adjacency list
+    vector<vector<int>> distanceFromGates; // distanceFromGates[slotId][gateIndex]
 
     Queue normalQueue;
     priority_queue<Vehicle, vector<Vehicle>, ComparePriority> priorityQueue;
     unordered_map<string, int> vehicleMap;
 
+    // Structure for the history nodes
+    struct HistoryNode
+    {
+        string action;
+        HistoryNode *next;
+    };
+
+    HistoryNode *recentTop;
+    HistoryNode *historyHead;
+    HistoryNode *historyTail;
+
 public:
-    vector<int> gateSlots;                     // stores slot IDs of gates
+    vector<int> gateSlots; // stores slot IDs of gates
 
     ParkingSystem(int totalSlots);
 
     void buildGridGraph(int rows, int cols, int dRow, int dCol);
-    void addGate(int slotId);                       // add gate
-    void computeDistances();                        // compute distance from all gates
+    void addGate(int slotId); // add gate
+    void computeDistances();  // compute distance from all gates
 
     void addVehicle(Vehicle v);
-    void assignSlot(int gateIndex);                 // assign vehicle from a specific gate
-    int findNearestAvailableSlot(int gateIndex);   // nearest slot from given gate
+    void assignSlot(int gateIndex);              // assign vehicle from a specific gate
+    int findNearestAvailableSlot(int gateIndex); // nearest slot from given gate
     void removeVehicle(string plate);
     void displaySlots();
+
+    string popAction();
+    string peekAction();
+    void recordAction(string action);
+    void pushAction(string action);
+    void appendHistory(string action);
+    void showRecentAction();
+    void showFullHistory();
 };
 
 #endif
