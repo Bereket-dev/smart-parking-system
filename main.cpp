@@ -1,10 +1,13 @@
 #include <iostream>
+#include <string>
 #include "ParkingSystem.h"
+
 using namespace std;
 
 int main()
 {
     int rows, cols, dRow, dCol;
+    cout << "=== Smart Parking System Configuration ===\n";
     cout << "Enter number of rows: ";
     cin >> rows;
     cout << "Enter distance between rows: ";
@@ -32,13 +35,13 @@ int main()
 
         if (side == "left" || side == "right")
         {
-            cout << "Enter row number (0 to " << rows - 1 << "): ";
+            cout << "Enter row index (0 to " << rows - 1 << "): ";
             cin >> pos;
             slotId = (side == "left") ? pos * cols + 1 : pos * cols + cols;
         }
         else if (side == "front" || side == "back")
         {
-            cout << "Enter column number (0 to " << cols - 1 << "): ";
+            cout << "Enter column index (0 to " << cols - 1 << "): ";
             cin >> pos;
             slotId = (side == "front") ? pos + 1 : (rows - 1) * cols + pos + 1;
         }
@@ -56,13 +59,14 @@ int main()
     int choice;
     do
     {
+        cout << "\n=== Parking Menu ===\n";
         cout << "1. Add Vehicle\n";
-        cout << "2. Assign Slot\n";
-        cout << "3. Remove Vehicle\n";
-        cout << "4. Display Slots\n";
-        cout << "5. Show Recent Actions\n";
+        cout << "2. Assign Slot To Vehicle\n";
+        cout << "3. Remove Vehicle (Exit)\n";
+        cout << "4. Display All Slots Status\n";
+        cout << "5. Show Most Recent Action\n";
         cout << "6. Show Full History\n";
-        cout << "0. Exit\n";
+        cout << "0. Exit Program\n";
         cout << "Choice: ";
         cin >> choice;
 
@@ -72,22 +76,23 @@ int main()
             int pr;
             cout << "Enter vehicle plate: ";
             cin >> plate;
-            cout << "Enter priority (1-3): ";
+            cout << "Enter priority (1: Emergency, 2: VIP, 3: Normal): ";
             cin >> pr;
             system.addVehicle(Vehicle(plate, pr));
         }
         else if (choice == 2)
         {
-            int gateIndex;
-            cout << "Enter gate number vehicle entered from (1 to " << system.gateSlots.size() << "): ";
-            cin >> gateIndex;
-            if (gateIndex < 1 || gateIndex > system.gateSlots.size())
+            int gateNum;
+            cout << "Enter gate number vehicle entered from (1 to " << gates << "): ";
+            cin >> gateNum;
+
+            if (gateNum < 1 || gateNum > gates)
             {
                 cout << "Invalid gate number.\n";
             }
             else
             {
-                system.assignSlot(gateIndex - 1);
+                system.assignSlot(gateNum - 1);
             }
         }
         else if (choice == 3)

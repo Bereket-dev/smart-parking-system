@@ -8,25 +8,77 @@ using namespace std;
 ParkingSystem::ParkingSystem(int totalSlots)
 {
     head = tail = nullptr;
-    graph.resize(totalSlots + 1);
-    distanceFromGates.resize(totalSlots + 1);
+    totalSlotsCount = totalSlots;
+    gateCount = 0;
+    gateHead = nullptr;
+
+    graph = new AdjNode *[totalSlots + 1];
+    for (int i = 0; i <= totalSlots; i++)
+        graph[i] = nullptr;
+
+    distanceFromGates = new int *[totalSlots + 1];
+    for (int i = 0; i <= totalSlots; i++)
+        distanceFromGates[i] = nullptr;
 
     recentTop = nullptr;
-    historyHead = nullptr;
-    historyTail = nullptr;
+    historyHead = historyTail = nullptr;
+}
+
+ParkingSystem::~ParkingSystem()
+{
+    for (int i = 0; i <= totalSlotsCount; i++)
+    {
+        AdjNode *curr = graph[i];
+        while (curr)
+        {
+            AdjNode *temp = curr;
+            curr = curr->next;
+            delete temp;
+        }
+    }
+    delete[] graph;
+
+    for (int i = 0; i <= totalSlotsCount; i++)
+    {
+        if (distanceFromGates[i])
+            delete[] distanceFromGates[i];
+    }
+    delete[] distanceFromGates;
+
+    GateNode *gCurr = gateHead;
+    while (gCurr)
+    {
+        GateNode *temp = gCurr;
+        gCurr = gCurr->next;
+        delete temp;
+    }
+
+    while (recentTop)
+        popAction();
+    HistoryNode *hCurr = historyHead;
+    while (hCurr)
+    {
+        HistoryNode *temp = hCurr;
+        hCurr = hCurr->next;
+        delete temp;
+    }
 }
 
 void ParkingSystem::buildGridGraph(int rows, int cols, int dRow, int dCol)
 {
     int id = 1;
-    vector<pair<int, int>> coordinates(rows * cols + 1);
+    struct Coord
+    {
+        int r, c;
+    };
+    Coord *coords = new Coord[rows * cols + 1];
 
     for (int r = 0; r < rows; r++)
     {
         for (int c = 0; c < cols; c++)
         {
             ParkingSlot *slot = new ParkingSlot(id);
-            coordinates[id] = {r, c};
+            coords[id] = {r, c};
 
             if (!head)
                 head = tail = slot;
@@ -36,48 +88,55 @@ void ParkingSystem::buildGridGraph(int rows, int cols, int dRow, int dCol)
                 slot->prev = tail;
                 tail = slot;
             }
-
             id++;
         }
     }
 
     for (int i = 1; i <= rows * cols; i++)
     {
-        int r = coordinates[i].first;
-        int c = coordinates[i].second;
-
         for (int j = 1; j <= rows * cols; j++)
         {
             if (i == j)
                 continue;
-            int rr = coordinates[j].first;
-            int cc = coordinates[j].second;
+            int dist = abs(coords[i].r - coords[j].r) * dRow + abs(coords[i].c - coords[j].c) * dCol;
 
-            int dr = abs(r - rr);
-            int dc = abs(c - cc);
-            int dist = dr * dRow + dc * dCol;
-
-            if ((abs(r - rr) + abs(c - cc)) == 1)
-                graph[i].push_back({j, dist});
+            if ((abs(coords[i].r - coords[j].r) + abs(coords[i].c - coords[j].c)) == 1)
+            {
+                AdjNode *newNode = new AdjNode{j, dist, graph[i]};
+                graph[i] = newNode;
+            }
         }
     }
+    delete[] coords;
 }
 
 void ParkingSystem::addGate(int slotId)
 {
-    gateSlots.push_back(slotId);
+    GateNode *newNode = new GateNode{slotId, nullptr};
+    if (!gateHead)
+        gateHead = newNode;
+    else
+    {
+        GateNode *temp = gateHead;
+        while (temp->next)
+            temp = temp->next;
+        temp->next = newNode;
+    }
+    gateCount++;
 }
 
 void ParkingSystem::computeDistances()
 {
-    int totalSlots = graph.size() - 1;
-
-    for (size_t g = 0; g < gateSlots.size(); g++)
+    GateNode *currGate = gateHead;
+    for (int g = 0; g < gateCount; g++)
     {
-        int gateId = gateSlots[g];
-        vector<int> dist(totalSlots + 1, INT_MAX);
-        queue<int> q;
+        int gateId = currGate->slotId;
 
+        int *dist = new int[totalSlotsCount + 1];
+        for (int i = 0; i <= totalSlotsCount; i++)
+            dist[i] = INT_MAX;
+
+        queue<int> q;
         dist[gateId] = 0;
         q.push(gateId);
 
@@ -85,31 +144,33 @@ void ParkingSystem::computeDistances()
         {
             int curr = q.front();
             q.pop();
-            for (auto &neighbor : graph[curr])
+
+            AdjNode *neighbor = graph[curr];
+            while (neighbor)
             {
-                int neighborId = neighbor.first;
-                if (dist[neighborId] == INT_MAX)
+                if (dist[neighbor->neighborId] == INT_MAX)
                 {
-                    dist[neighborId] = dist[curr] + neighbor.second;
-                    q.push(neighborId);
+                    dist[neighbor->neighborId] = dist[curr] + neighbor->weight;
+                    q.push(neighbor->neighborId);
                 }
+                neighbor = neighbor->next;
             }
         }
 
-        for (int i = 1; i <= totalSlots; i++)
+        for (int i = 1; i <= totalSlotsCount; i++)
         {
-            distanceFromGates[i].resize(gateSlots.size());
+            if (!distanceFromGates[i])
+                distanceFromGates[i] = new int[gateCount];
             distanceFromGates[i][g] = dist[i];
         }
+        delete[] dist;
+        currGate = currGate->next;
     }
 }
 
 void ParkingSystem::addVehicle(Vehicle v)
 {
-    if (v.priority == 3)
-        normalQueue.enqueue(v);
-    else
-        priorityQueue.push(v);
+    priorityQueue.enqueue(v);
 }
 
 int ParkingSystem::findNearestAvailableSlot(int gateIndex)
@@ -128,21 +189,15 @@ int ParkingSystem::findNearestAvailableSlot(int gateIndex)
         }
         curr = curr->next;
     }
-
     return bestSlot;
 }
 
 void ParkingSystem::assignSlot(int gateIndex)
 {
     Vehicle v;
-    if (!priorityQueue.empty())
+    if (!priorityQueue.isEmpty())
     {
         v = priorityQueue.top();
-        priorityQueue.pop();
-    }
-    else if (!normalQueue.isEmpty())
-    {
-        v = normalQueue.dequeue();
     }
     else
     {
@@ -154,8 +209,10 @@ void ParkingSystem::assignSlot(int gateIndex)
     if (slotId == -1)
     {
         cout << "Parking full.\n";
+        waitingQueue.enqueue(v);
         return;
     }
+    priorityQueue.dequeue(); // remove from wait if there is a free space only
 
     ParkingSlot *curr = head;
     while (curr)
@@ -169,13 +226,8 @@ void ParkingSystem::assignSlot(int gateIndex)
         curr = curr->next;
     }
 
-    string action = "PARK: " + v.plateNumber + " at slot " + to_string(slotId);
-    recordAction(action);
-
-    cout << "Vehicle " << v.plateNumber
-         << " parked at slot " << slotId
-         << " (distance " << distanceFromGates[slotId][gateIndex]
-         << " from gate " << gateIndex + 1 << ")\n";
+    recordAction("PARK: " + v.plateNumber + " at slot " + to_string(slotId));
+    cout << "Vehicle " << v.plateNumber << " parked at slot " << slotId << "\n";
 }
 
 void ParkingSystem::removeVehicle(string plate)
@@ -185,19 +237,29 @@ void ParkingSystem::removeVehicle(string plate)
     {
         if (!curr->isFree && curr->parkedPlate == plate)
         {
-            curr->isFree = true;
+            if (!waitingQueue.isEmpty())
+            {
+                Vehicle v = waitingQueue.top();
+                waitingQueue.dequeue();
+                curr->parkedPlate = v.plateNumber;
+                recordAction("EXIT: " + plate + " from slot " + to_string(curr->slotId));
+                recordAction("PARK: " + v.plateNumber + " at slot " + to_string(curr->slotId));
+            }
+            else
+            {
+                curr->isFree = true;
+                curr->parkedPlate = "";
+                recordAction("EXIT: " + plate + " from slot " + to_string(curr->slotId));
+            }
 
-            string action = "EXIT: " + plate + " from slot " + to_string(curr->slotId);
-            recordAction(action);
-
-            cout << "Success: Vehicle " << plate << " has been removed from slot " << curr->slotId << ".\n";
+            cout << "Success: Vehicle removed from slot " << curr->slotId << ".\n";
             found = true;
+
             break;
         }
     }
-
     if (!found)
-        cout << "Error: Vehicle with plate number '" << plate << "' was not found in the system.\n";
+        cout << "Error: Vehicle " << plate << " not found.\n";
 }
 
 void ParkingSystem::displaySlots()
@@ -205,11 +267,12 @@ void ParkingSystem::displaySlots()
     ParkingSlot *curr = head;
     while (curr)
     {
-        cout << "Slot " << curr->slotId
-             << " | Status: " << (curr->isFree ? "Free" : "Occupied")
-             << " | Distances: ";
-        for (size_t g = 0; g < gateSlots.size(); g++)
-            cout << distanceFromGates[curr->slotId][g] << (g + 1 == gateSlots.size() ? "" : ", ");
+        cout << "Slot " << curr->slotId << " | " << (curr->isFree ? "Free" : "Occupied");
+        cout << " | Distances: ";
+        for (int g = 0; g < gateCount; g++)
+        {
+            cout << distanceFromGates[curr->slotId][g] << (g + 1 == gateCount ? "" : ", ");
+        }
         cout << endl;
         curr = curr->next;
     }
@@ -221,10 +284,8 @@ void ParkingSystem::recordAction(string action)
     recentTop = newNode;
 
     HistoryNode *newHist = new HistoryNode{action, nullptr};
-    if (historyHead == nullptr)
-    {
+    if (!historyHead)
         historyHead = historyTail = newHist;
-    }
     else
     {
         historyTail->next = newHist;
@@ -232,14 +293,9 @@ void ParkingSystem::recordAction(string action)
     }
 }
 
-void ParkingSystem::pushAction(string action)
-{
-    recordAction(action);
-}
-
 string ParkingSystem::popAction()
 {
-    if (recentTop == nullptr)
+    if (!recentTop)
         return "No actions";
     HistoryNode *temp = recentTop;
     string action = temp->action;
@@ -250,31 +306,20 @@ string ParkingSystem::popAction()
 
 string ParkingSystem::peekAction()
 {
-    if (recentTop == nullptr)
-        return "No actions";
-    return recentTop->action;
+    return recentTop ? recentTop->action : "No actions";
 }
 
-void ParkingSystem::appendHistory(string action)
-{
-    recordAction(action);
-}
-
-void ParkingSystem::showRecentAction()
-{
-    cout << "Recent Action: " << peekAction() << endl;
-}
+void ParkingSystem::pushAction(string action) { recordAction(action); }
+void ParkingSystem::appendHistory(string action) { recordAction(action); }
+void ParkingSystem::showRecentAction() { cout << "Recent: " << peekAction() << endl; }
 
 void ParkingSystem::showFullHistory()
 {
     cout << "\nFull Parking History:\n";
-    if (historyHead == nullptr)
-    {
-        cout << "No history available.\n";
-        return;
-    }
     HistoryNode *temp = historyHead;
-    while (temp != nullptr)
+    if (!temp)
+        cout << "No history available.\n";
+    while (temp)
     {
         cout << temp->action << endl;
         temp = temp->next;

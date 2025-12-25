@@ -3,42 +3,74 @@
 
 #include "Vehicle.h"
 
-struct QNode {
+struct QNode
+{
     Vehicle data;
-    QNode* next;
+    QNode *next;
 };
 
-class Queue {
+class Queue
+{
 private:
-    QNode* front;
-    QNode* rear;
+    QNode *front;
+    QNode *rear;
 
 public:
-    Queue() {
+    Queue()
+    {
         front = rear = nullptr;
     }
 
-    bool isEmpty() {
+    bool isEmpty()
+    {
         return front == nullptr;
     }
 
-    void enqueue(Vehicle v) {
-        QNode* temp = new QNode{v, nullptr};
-
-        if (rear == nullptr) {
-            front = rear = temp;
-            return;
+    Vehicle top()
+    {
+        if (isEmpty())
+        {
+            return Vehicle("", -1);
         }
-        rear->next = temp;
-        rear = temp;
+        return front->data;
     }
 
-    Vehicle dequeue() {
-        if (isEmpty()) {
+    void enqueue(Vehicle v)
+    {
+        QNode *newNode = new QNode{v, nullptr};
+
+        if (isEmpty() || v.priority < front->data.priority)
+        {
+            newNode->next = front;
+            front = newNode;
+            if (rear == nullptr)
+                rear = newNode;
+            return;
+        }
+
+        QNode *current = front;
+        while (current->next != nullptr && current->next->data.priority <= v.priority)
+        {
+            current = current->next;
+        }
+
+        newNode->next = current->next;
+        current->next = newNode;
+
+        if (newNode->next == nullptr)
+        {
+            rear = newNode;
+        }
+    }
+
+    Vehicle dequeue()
+    {
+        if (isEmpty())
+        {
             return Vehicle("", -1);
         }
 
-        QNode* temp = front;
+        QNode *temp = front;
         Vehicle v = temp->data;
         front = front->next;
 
@@ -47,6 +79,14 @@ public:
 
         delete temp;
         return v;
+    }
+
+    ~Queue()
+    {
+        while (!isEmpty())
+        {
+            dequeue();
+        }
     }
 };
 

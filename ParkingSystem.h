@@ -1,10 +1,9 @@
 #ifndef PARKINGSYSTEM_H
 #define PARKINGSYSTEM_H
 
-#include <unordered_map>
+#include <iostream>
+#include <string>
 #include <queue>
-#include <vector>
-#include <limits>
 #include "Vehicle.h"
 #include "Queue.h"
 #include "ParkingSlot.h"
@@ -19,18 +18,33 @@ struct ComparePriority
     }
 };
 
+struct GateNode
+{
+    int slotId;
+    GateNode *next;
+};
+
+struct AdjNode
+{
+    int neighborId;
+    int weight;
+    AdjNode *next;
+};
+
 class ParkingSystem
 {
 private:
     ParkingSlot *head;
     ParkingSlot *tail;
 
-    vector<vector<pair<int, int>>> graph; 
-    vector<vector<int>> distanceFromGates; 
+    AdjNode **graph;
+    int totalSlotsCount;
 
-    Queue normalQueue;
-    priority_queue<Vehicle, vector<Vehicle>, ComparePriority> priorityQueue;
-    unordered_map<string, int> vehicleMap;
+    int **distanceFromGates;
+    int gateCount;
+
+    Queue priorityQueue;
+    Queue waitingQueue;
 
     struct HistoryNode
     {
@@ -43,17 +57,18 @@ private:
     HistoryNode *historyTail;
 
 public:
-    vector<int> gateSlots; 
+    GateNode *gateHead;
 
     ParkingSystem(int totalSlots);
+    ~ParkingSystem();
 
     void buildGridGraph(int rows, int cols, int dRow, int dCol);
-    void addGate(int slotId); 
-    void computeDistances(); 
+    void addGate(int slotId);
+    void computeDistances();
 
     void addVehicle(Vehicle v);
-    void assignSlot(int gateIndex);              
-    int findNearestAvailableSlot(int gateIndex); 
+    void assignSlot(int gateIndex);
+    int findNearestAvailableSlot(int gateIndex);
     void removeVehicle(string plate);
     void displaySlots();
 
