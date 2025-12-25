@@ -51,7 +51,7 @@ int main()
         system.addGate(slotId);
     }
 
-    system.computeDistances(); // compute distances from all gates
+    system.computeDistances();
 
     int choice;
     do
