@@ -3,39 +3,49 @@
 
 #include "Vehicle.h"
 
+struct QNode {
+    Vehicle data;
+    QNode* next;
+};
+
 class Queue {
 private:
-    Vehicle arr[100];
-    int front, rear;
+    QNode* front;
+    QNode* rear;
 
 public:
     Queue() {
-        front = rear = -1;
+        front = rear = nullptr;
     }
 
     bool isEmpty() {
-        return front == -1;
-    }
-
-    bool isFull() {
-        return rear == 99;
+        return front == nullptr;
     }
 
     void enqueue(Vehicle v) {
-        if (isFull()) return;
-        if (front == -1) front = 0;
-        arr[++rear] = v;
+        QNode* temp = new QNode{v, nullptr};
+
+        if (rear == nullptr) {
+            front = rear = temp;
+            return;
+        }
+        rear->next = temp;
+        rear = temp;
     }
 
     Vehicle dequeue() {
-        Vehicle v;
-        if (isEmpty()) return v;
+        if (isEmpty()) {
+            return Vehicle("", -1);
+        }
 
-        v = arr[front];
-        if (front == rear)
-            front = rear = -1;
-        else
-            front++;
+        QNode* temp = front;
+        Vehicle v = temp->data;
+        front = front->next;
+
+        if (front == nullptr)
+            rear = nullptr;
+
+        delete temp;
         return v;
     }
 };
