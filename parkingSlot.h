@@ -1,12 +1,19 @@
 #ifndef PARKINGSLOT_H
 #define PARKINGSLOT_H
 
-#include "Vehicle.h"
+class ParkingSlot {
+public:
+    int slotId;
+    bool isFree;
 
-struct ParkingSlot {
-    int id;
-    bool occupied;
-    Vehicle vehicle;
+    ParkingSlot* next;
+    ParkingSlot* prev;
+
+    ParkingSlot(int id) {
+        slotId = id;
+        isFree = true;
+        next = prev = nullptr;
+    }
 };
 
 #endif
